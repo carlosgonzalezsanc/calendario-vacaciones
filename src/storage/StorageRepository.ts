@@ -127,6 +127,7 @@ function normalizarPlan(p: Record<string, unknown>): PlanAnio {
   return {
     ...base,
     bloques: porIndice(p.bloques),
+    puentes: porIndice(p.puentes),
     remanente: fechas(p.remanente),
     asuntosPropios: fechas(p.asuntosPropios),
     noImputables: fechas(p.noImputables),

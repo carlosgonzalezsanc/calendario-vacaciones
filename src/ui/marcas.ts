@@ -24,6 +24,11 @@ export const META_MARCA: Record<TipoMarca, MetaMarca> = {
     nombre: NOMBRE_MARCA.asuntosPropios,
     ayuda: '6 días al año (art. 102 h). Dos de ellos pueden fraccionarse en dos periodos cada uno.',
   },
+  puente: {
+    inicial: 'P',
+    nombre: NOMBRE_MARCA.puente,
+    ayuda: 'A costa de un bloque: el bloque pasa a tener un día menos.',
+  },
   noImputable: {
     inicial: 'N',
     nombre: NOMBRE_MARCA.noImputable,
@@ -50,6 +55,7 @@ export const PINCELES: Pincel[] = [
   'vacaciones',
   'remanente',
   'asuntosPropios',
+  'puente',
   'noImputable',
   'baja',
   'permiso',

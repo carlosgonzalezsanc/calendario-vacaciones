@@ -6,12 +6,18 @@ Fuente: `docs/referencia/Calendario_2027_calculo_vacaciones_vN2_1p.xlsx` (versi�
 
 ## 1. Rangos de fechas
 
-| Sección | Rango permitido | Celdas |
+En el Excel todas las secciones admiten fechas del 1/1/año al 31/1/año+1 (`AS2:AT2`, `FINI` y `FFIN`) ✅. 💡 En la web hay dos plazos (petición del usuario, 27/10/2026):
+
+| Sección | Plazo en la web |
+|---|---|
+| Vacaciones (bloques), puentes, asuntos propios, Día de San Isidro | **Año natural** (1/1 – 31/12). Un bloque no puede quedar a caballo entre dos años |
+| Remanente de vacaciones, no imputables, bajas, permisos | 1/1/año – **31/1/año+1** |
+
+| Otra sección | Rango permitido | Celdas |
 |---|---|---|
-| Bloques, remanente, asuntos propios, no imputables, bajas, permisos, San Isidro | 1/1/año – 31/1/año+1 | `AS2:AT2` (`FINI`, `FFIN`) ✅ |
 | Calendario escolar | 1/9/año−1 – 30/9/año | `AS3:AT3` ✅ |
 
-En el Excel las validaciones son de tipo «fecha entre». En la web no bloquean: se muestran como error.
+En el Excel las validaciones son de tipo «fecha entre». En la web, el pincel y los formularios no dejan guardar nada fuera de plazo: lo avisan con un popup. Si llega en un JSON importado, se muestra como error.
 
 ## 2. Bloques de vacaciones
 
@@ -27,7 +33,9 @@ En el Excel las validaciones son de tipo «fecha entre». En la web no bloquean:
   | 10+10+5+5 | 10 | 10 | 5 | 5 |
 
 - **Fin del bloque** = `inicio + días − 1` (`AO6 = AN6 + AS6 − 1`) ✅. Los días son naturales.
-- **Puente a costa del bloque**: en el Excel cada bloque admitía un puente (`AP6:AP9`, elegido de la lista `Puentes_L`) que le restaba 1 día. ❌ **La web no tiene puentes** (petición del usuario, 27/10/2026). Si se importan datos antiguos con puentes, se ignoran.
+- **Puente a costa del bloque** ✅: cada fila de bloque tiene una casilla de puente (`AP6:AP9`). Si se rellena, el bloque pasa a tener 1 día menos (`AS6 = VLOOKUP(...) − IF(AP6<>"",1,0)`). Como máximo hay un puente por bloque. El día de puente no genera remanente.
+- **Lista de puentes** ✅: en el Excel el puente solo se puede elegir de una lista cerrada (`Puentes_L`, `AM79:AM86`). Para 2027 solo contiene el **7/12/2027**.
+  - 💡 En la web los puentes posibles se calculan solos: son los días laborables que tienen un día no laborable antes y después. Si el usuario marca un puente que no cumple esto, se le avisa.
 - **Inicio de bloque** ✅ (comentario de `AN5` + formato condicional de `AN6:AN9`): un bloque no puede empezar en domingo ni en festivo.
 - **Separación entre bloques de 5 días** ✅ (comentario de `AN5` + formato condicional de `AN8` y `AN9`): entre los dos bloques de 5 días tiene que haber al menos 7 días.
   - `AN8`: error si `AN7 + 12 > AN8` (modalidad 20+5+5).
@@ -65,14 +73,14 @@ En el Excel las validaciones son de tipo «fecha entre». En la web no bloquean:
 
 ## 5. Un día, una marca
 
-En el Excel un día podía tener varias marcas y la hoja `Vista` las ordenaba: Vacaciones (V) > Suelto (S) > Puente (P) > No imputable (N) > Baja (B) ✅ (el puente ya no existe en la web).
+En el Excel un día podía tener varias marcas y la hoja `Vista` las ordenaba: Vacaciones (V) > Suelto (S) > Puente (P) > No imputable (N) > Baja (B) ✅ .
 
 💡 En la web (petición del usuario, 27/10/2026) **cada día admite una sola marca**:
 - Pulsar un día con el mismo tipo lo cancela (un bloque se cancela entero).
 - Marcarlo con otro tipo, o crear un bloque que se solape con otro, se rechaza con un popup y no se guarda. Igual desde los formularios.
 - Si llegan solapes en un JSON importado, se muestran como error.
 
-Iniciales en el calendario: V vacaciones, R remanente, A asuntos propios, N no imputable, B baja, C permiso por convenio, I Día de San Isidro.
+Iniciales en el calendario: V vacaciones, R remanente, A asuntos propios, P puente, N no imputable, B baja, C permiso por convenio, I Día de San Isidro.
 
 ## 6. Festivos
 

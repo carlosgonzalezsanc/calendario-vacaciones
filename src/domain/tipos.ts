@@ -81,6 +81,8 @@ export interface PlanAnio {
   modalidad: ModalidadId;
   /** Inicio de cada bloque de la modalidad (null = sin asignar). */
   bloques: (ISODate | null)[];
+  /** Puente «a costa» de cada bloque (mismo índice que bloques): resta un día al bloque. */
+  puentes: (ISODate | null)[];
   /** Días generados por domingos y festivos dentro de los bloques. */
   remanente: ISODate[];
   /** Los 6 días de asuntos propios del art. 102 h). */
@@ -96,6 +98,7 @@ export type TipoMarca =
   | 'vacaciones'
   | 'remanente'
   | 'asuntosPropios'
+  | 'puente'
   | 'noImputable'
   | 'baja'
   | 'permiso'
@@ -103,10 +106,13 @@ export type TipoMarca =
 
 export interface Bloque {
   indice: number;
-  /** Días naturales del bloque según la modalidad. */
+  /** Días de la modalidad (sin descontar el puente). */
+  diasNominales: number;
+  /** Días reales del bloque = nominales − 1 si tiene puente. */
   dias: number;
   inicio: ISODate | null;
   fin: ISODate | null;
+  puente: ISODate | null;
 }
 
 export type NivelIncidencia = 'error' | 'aviso';

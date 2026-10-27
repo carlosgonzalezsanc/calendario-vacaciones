@@ -19,18 +19,21 @@ export function nombreModalidad(m: ModalidadId): string {
   return MODALIDADES[m].join(' + ') + ' días';
 }
 
-/** Fin = inicio + días − 1. */
+/** Fin = inicio + días − 1; con puente el bloque tiene un día menos. */
 export function calcularBloques(plan: PlanAnio): Bloque[] {
-  return MODALIDADES[plan.modalidad].map((dias, indice) => {
+  return MODALIDADES[plan.modalidad].map((diasNominales, indice) => {
     const inicio = plan.bloques[indice] ?? null;
-    return { indice, dias, inicio, fin: inicio ? sumarDias(inicio, dias - 1) : null };
+    const puente = plan.puentes[indice] ?? null;
+    const dias = diasNominales - (puente ? 1 : 0);
+    return { indice, diasNominales, dias, inicio, fin: inicio ? sumarDias(inicio, dias - 1) : null, puente };
   });
 }
 
-/** Ajusta el array de bloques al número de bloques de la modalidad. */
+/** Ajusta los arrays de bloques y puentes al número de bloques de la modalidad. */
 export function cambiarModalidad(plan: PlanAnio, modalidad: ModalidadId): PlanAnio {
   const n = MODALIDADES[modalidad].length;
-  return { ...plan, modalidad, bloques: Array.from({ length: n }, (_, i) => plan.bloques[i] ?? null) };
+  const ajustar = (xs: (ISODate | null)[]) => Array.from({ length: n }, (_, i) => xs[i] ?? null);
+  return { ...plan, modalidad, bloques: ajustar(plan.bloques), puentes: ajustar(plan.puentes) };
 }
 
 /**

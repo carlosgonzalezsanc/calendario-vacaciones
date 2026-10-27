@@ -21,7 +21,7 @@ export function Resumen({
   onModalidad,
   onIr,
 }: Props) {
-  const usados = bloques.reduce((s, b) => s + (b.inicio ? b.dias : 0), 0);
+  const usados = bloques.reduce((s, b) => s + (b.inicio ? b.dias : 0) + (b.puente ? 1 : 0), 0);
   const errores = incidencias.filter((i) => i.nivel === 'error');
   const avisos = incidencias.filter((i) => i.nivel === 'aviso');
 
@@ -52,6 +52,14 @@ export function Resumen({
               </button>
             ) : (
               <span className="tenue">sin asignar</span>
+            )}
+            {b.puente && (
+              <span className="tenue">
+                · puente{' '}
+                <button type="button" className="enlace" onClick={() => onIr(b.puente!)}>
+                  {formatoCorto(b.puente)}
+                </button>
+              </span>
             )}
           </li>
         ))}

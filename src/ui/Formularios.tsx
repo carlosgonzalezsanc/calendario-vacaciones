@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { formatoCorto, periodoAnio, sumarDias, type ISODate } from '../domain/fechas';
+import { anioNatural, formatoCorto, periodoAnio, sumarDias, type ISODate } from '../domain/fechas';
 import { nuevoId } from '../domain/pincel';
 import type { Bloque, PlanAnio, TipoPermiso } from '../domain/tipos';
 import { DIAS_PERMISO_MATRIMONIO, NOMBRE_MARCA } from '../domain/validar';
@@ -16,14 +16,17 @@ export function Formularios({
   bloques: Bloque[];
   onCambio: (p: PlanAnio) => void;
 }) {
+  // Remanente, no imputables, bajas y permisos: hasta el 31/1 del año siguiente.
   const { inicio: min, fin: max } = periodoAnio(anio);
-  const fijarInicio = (i: number, v: string) =>
-    onCambio({ ...plan, bloques: plan.bloques.map((x, k) => (k === i ? v || null : x)) });
+  // Vacaciones, puentes, asuntos propios y San Isidro: solo dentro del año.
+  const maxAnio = anioNatural(anio).fin;
+  const fijar = (clave: 'bloques' | 'puentes', i: number, v: string) =>
+    onCambio({ ...plan, [clave]: plan[clave].map((x, k) => (k === i ? v || null : x)) });
 
   return (
     <div className="formularios">
       <fieldset>
-        <legend>Bloques de vacaciones</legend>
+        <legend>Bloques de vacaciones (dentro de {anio})</legend>
         {bloques.map((b) => (
           <div key={b.indice} className="fila-bloque">
             <label className="campo">
@@ -33,9 +36,19 @@ export function Formularios({
               <input
                 type="date"
                 min={min}
-                max={max}
+                max={maxAnio}
                 value={b.inicio ?? ''}
-                onChange={(e) => fijarInicio(b.indice, e.target.value)}
+                onChange={(e) => fijar('bloques', b.indice, e.target.value)}
+              />
+            </label>
+            <label className="campo">
+              <span>Puente (resta 1 día)</span>
+              <input
+                type="date"
+                min={min}
+                max={maxAnio}
+                value={b.puente ?? ''}
+                onChange={(e) => fijar('puentes', b.indice, e.target.value)}
               />
             </label>
             <span className="tenue fin">{b.fin ? `fin ${formatoCorto(b.fin)}` : ''}</span>
@@ -44,7 +57,7 @@ export function Formularios({
       </fieldset>
 
       <ListaFechas
-        titulo={NOMBRE_MARCA.remanente}
+        titulo={`${NOMBRE_MARCA.remanente} (hasta el ${formatoCorto(max)})`}
         fechas={plan.remanente}
         min={min}
         max={max}
@@ -54,7 +67,7 @@ export function Formularios({
         titulo={NOMBRE_MARCA.asuntosPropios}
         fechas={plan.asuntosPropios}
         min={min}
-        max={max}
+        max={maxAnio}
         onCambio={(asuntosPropios) => onCambio({ ...plan, asuntosPropios })}
       />
       <ListaFechas
@@ -81,7 +94,7 @@ export function Formularios({
           <input
             type="date"
             min={min}
-            max={max}
+            max={maxAnio}
             value={plan.sanIsidro ?? ''}
             onChange={(e) => onCambio({ ...plan, sanIsidro: e.target.value || null })}
           />

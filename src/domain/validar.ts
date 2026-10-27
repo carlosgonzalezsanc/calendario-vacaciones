@@ -1,13 +1,15 @@
 import type { Incidencia, PlanAnio, TipoMarca } from './tipos';
 import { calcularBloques, diasBloque, TOTAL_VACACIONES } from './bloques';
-import { CUPO_ASUNTOS_PROPIOS, diasGenerados, marcasPorDia } from './calculos';
-import { diferenciaDias, esDomingo, esSabado, formatoCorto, periodoAnio, type ISODate } from './fechas';
+import { candidatosPuente, CUPO_ASUNTOS_PROPIOS, diasGenerados, marcasPorDia } from './calculos';
+import { diferenciaDias, esDomingo, esSabado, formatoCorto, type ISODate } from './fechas';
 import { esLaborable, type MapaFestivos } from './festivos';
+import { fueraDePlazo } from './plazos';
 
 export const NOMBRE_MARCA: Record<TipoMarca, string> = {
   vacaciones: 'Vacaciones',
   remanente: 'Remanente de vacaciones',
   asuntosPropios: 'Asuntos propios',
+  puente: 'Puente',
   noImputable: 'No imputable al año',
   baja: 'Baja',
   permiso: 'Permiso por convenio',
@@ -27,12 +29,11 @@ export interface ContextoValidacion {
 export function validar(plan: PlanAnio, ctx: ContextoValidacion): Incidencia[] {
   const out: Incidencia[] = [];
   const { festivos, anio } = ctx;
-  const { inicio: fini, fin: ffin } = periodoAnio(anio);
   const bloques = calcularBloques(plan);
   const f = formatoCorto;
 
-  const fueraDeRango = (d: ISODate) => d < fini || d > ffin;
-  const rangoTxt = `del ${f(fini)} al ${f(ffin)}`;
+  // --- Plazos: vacaciones, puentes, asuntos propios y San Isidro dentro del año; el resto hasta el 31/1 ---
+  for (const x of fueraDePlazo(plan, anio)) out.push(err('FUERA_DE_PLAZO', x.mensaje, x.fechas));
 
   // --- Bloques ---
   for (const b of bloques) {
@@ -46,9 +47,6 @@ export function validar(plan: PlanAnio, ctx: ContextoValidacion): Incidencia[] {
       out.push(
         err('BLOQUE_INICIO_FESTIVO', `${nombre}: no puede empezar en festivo (${f(b.inicio)}, ${fest.nombre}).`, [b.inicio]),
       );
-    }
-    if (fueraDeRango(b.inicio) || fueraDeRango(b.fin)) {
-      out.push(err('FUERA_DE_RANGO', `${nombre}: tiene que estar ${rangoTxt}.`, [b.inicio]));
     }
   }
 
@@ -65,7 +63,7 @@ export function validar(plan: PlanAnio, ctx: ContextoValidacion): Incidencia[] {
     }
   }
 
-  const bloques5 = bloques.filter((b) => b.dias === 5);
+  const bloques5 = bloques.filter((b) => b.diasNominales === 5);
   const con5 = bloques5.filter((b) => b.inicio).sort((a, b) => a.inicio!.localeCompare(b.inicio!));
   if (con5.length === 2) {
     const [a, b] = con5;
@@ -107,6 +105,19 @@ export function validar(plan: PlanAnio, ctx: ContextoValidacion): Incidencia[] {
     );
   }
 
+  // --- Puentes ---
+  const candidatos = candidatosPuente(anio, festivos);
+  plan.puentes.forEach((p, i) => {
+    if (!p) return;
+    if (!esLaborable(p, festivos)) {
+      out.push(aviso('PUENTE_NO_LABORABLE', `Puente ${f(p)} (bloque ${i + 1}): no es un día laborable.`, [p]));
+    } else if (!candidatos.has(p)) {
+      out.push(
+        aviso('PUENTE_NO_CANDIDATO', `Puente ${f(p)} (bloque ${i + 1}): no está entre dos días no laborables.`, [p]),
+      );
+    }
+  });
+
   // --- Remanente de vacaciones, asuntos propios y Día de San Isidro ---
   const generados = diasGenerados(bloques, festivos).total;
   const cupos: [ISODate[], number, string, string][] = [
@@ -126,8 +137,7 @@ export function validar(plan: PlanAnio, ctx: ContextoValidacion): Incidencia[] {
     ...(plan.sanIsidro ? [[plan.sanIsidro, NOMBRE_MARCA.sanIsidro] as [ISODate, string]] : []),
   ];
   for (const [d, nombre] of sueltos) {
-    if (fueraDeRango(d)) out.push(err('FUERA_DE_RANGO', `${nombre} ${f(d)}: tiene que estar ${rangoTxt}.`, [d]));
-    else if (!esLaborable(d, festivos)) {
+    if (!esLaborable(d, festivos)) {
       const fest = festivos.get(d);
       out.push(
         aviso(
@@ -139,19 +149,8 @@ export function validar(plan: PlanAnio, ctx: ContextoValidacion): Incidencia[] {
     }
   }
 
-  // --- No imputables, bajas, permisos ---
-  for (const [lista, nombre] of [
-    [plan.noImputables, 'Día no imputable'],
-    [plan.bajas, 'Baja'],
-  ] as const) {
-    for (const d of lista) {
-      if (fueraDeRango(d)) out.push(err('FUERA_DE_RANGO', `${nombre} ${f(d)}: tiene que estar ${rangoTxt}.`, [d]));
-    }
-  }
+  // --- Permisos ---
   for (const p of plan.permisos) {
-    if (fueraDeRango(p.inicio) || fueraDeRango(p.fin)) {
-      out.push(err('FUERA_DE_RANGO', `Permiso ${f(p.inicio)}–${f(p.fin)}: tiene que estar ${rangoTxt}.`, [p.inicio]));
-    }
     const dias = diferenciaDias(p.inicio, p.fin) + 1;
     if (p.tipo === 'matrimonio' && dias !== DIAS_PERMISO_MATRIMONIO) {
       out.push(

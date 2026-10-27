@@ -2,8 +2,9 @@ import type { Bloque, ModalidadId, PlanAnio, TipoMarca, TipoPermiso } from './ti
 import { bloqueQueContiene, calcularBloques, encajarSeleccion, MODALIDADES } from './bloques';
 import { diasSolapados, marcasPorDia } from './calculos';
 import { formatoCorto, rango, sumarDias, type ISODate } from './fechas';
-import { esLaborable, type MapaFestivos } from './festivos';
-import { DIAS_PERMISO_MATRIMONIO, NOMBRE_MARCA } from './validar';
+import { esLaborable } from './festivos';
+import { fueraDePlazo } from './plazos';
+import { DIAS_PERMISO_MATRIMONIO, NOMBRE_MARCA, type ContextoValidacion } from './validar';
 
 export type Pincel = TipoMarca | 'borrar';
 
@@ -24,6 +25,7 @@ export function crearPlanVacio(modalidad: ModalidadId = '10+10+5+5'): PlanAnio {
   return {
     modalidad,
     bloques: Array(n).fill(null),
+    puentes: Array(n).fill(null),
     remanente: [],
     asuntosPropios: [],
     noImputables: [],
@@ -54,6 +56,10 @@ export function describirDia(plan: PlanAnio, bloques: Bloque[], fecha: ISODate, 
     const b = bloqueQueContiene(bloques, fecha);
     if (b) return `${NOMBRE_MARCA.vacaciones} (bloque ${b.indice + 1}: ${f(b.inicio!)} – ${f(b.fin!)})`;
   }
+  if (tipo === 'puente') {
+    const i = plan.puentes.indexOf(fecha);
+    return `${NOMBRE_MARCA.puente} (a costa del bloque ${i + 1})`;
+  }
   if (tipo === 'permiso') {
     const p = plan.permisos.find((x) => fecha >= x.inicio && fecha <= x.fin);
     if (p) return `${NOMBRE_MARCA.permiso} (${f(p.inicio)} – ${f(p.fin)})`;
@@ -65,13 +71,28 @@ export function describirDia(plan: PlanAnio, bloques: Bloque[], fecha: ISODate, 
  * Aplica el pincel a un día (desde === hasta) o a un rango arrastrado.
  * - Pulsar un día ya cogido con el mismo tipo lo cancela (si es un bloque, el bloque entero).
  * - Marcar un día ya cogido con otro tipo se rechaza: cada día admite una sola marca.
+ * - Tampoco se aplica un cambio que deje algo fuera de su plazo (ver plazos.ts).
  */
 export function aplicarPincel(
   plan: PlanAnio,
   pincel: Pincel,
   desde: ISODate,
   hasta: ISODate,
-  festivos: MapaFestivos,
+  ctx: ContextoValidacion,
+  opciones: OpcionesPincel,
+): ResultadoPincel {
+  const r = aplicarSinComprobar(plan, pincel, desde, hasta, ctx, opciones);
+  if (r.rechazo) return r;
+  const rechazo = comprobarCambio(plan, r.plan, ctx.anio);
+  return rechazo ? { plan, rechazo } : r;
+}
+
+function aplicarSinComprobar(
+  plan: PlanAnio,
+  pincel: Pincel,
+  desde: ISODate,
+  hasta: ISODate,
+  { festivos }: ContextoValidacion,
   opciones: OpcionesPincel,
 ): ResultadoPincel {
   const [a, b] = desde <= hasta ? [desde, hasta] : [hasta, desde];
@@ -146,6 +167,20 @@ export function aplicarPincel(
       return { plan: { ...plan, [clave]: [...actual].sort() } };
     }
 
+    case 'puente': {
+      if (!unDia) return { plan, rechazo: 'El puente es un solo día: pulsa el día en lugar de arrastrar.' };
+      const conflicto = ocupado([a]);
+      if (conflicto) return conflicto;
+      const libre = plan.puentes.findIndex((x) => !x);
+      if (libre < 0) {
+        return { plan, rechazo: 'Cada bloque admite un solo puente y ya están todos usados.' };
+      }
+      return {
+        plan: { ...plan, puentes: plan.puentes.map((x, i) => (i === libre ? a : x)) },
+        mensaje: `Puente ${f(a)} a costa del bloque ${libre + 1} (que pasa a tener un día menos).`,
+      };
+    }
+
     case 'permiso': {
       const fin = unDia && opciones.tipoPermiso === 'matrimonio' ? sumarDias(a, DIAS_PERMISO_MATRIMONIO - 1) : b;
       const conflicto = ocupado(rango(a, fin));
@@ -184,6 +219,8 @@ function cancelar(plan: PlanAnio, bloques: Bloque[], tipo: TipoMarca, d: ISODate
         mensaje: `Bloque ${bl.indice + 1} cancelado.`,
       };
     }
+    case 'puente':
+      return { plan: { ...plan, puentes: plan.puentes.map((x) => (x === d ? null : x)) }, mensaje: 'Puente cancelado.' };
     case 'permiso':
       return {
         plan: { ...plan, permisos: plan.permisos.filter((p) => !(d >= p.inicio && d <= p.fin)) },
@@ -199,10 +236,15 @@ function cancelar(plan: PlanAnio, bloques: Bloque[], tipo: TipoMarca, d: ISODate
 }
 
 /**
- * Comprueba un cambio hecho desde los formularios: si crea días con dos marcas (por ejemplo, dos
- * bloques que se pisan o un asunto propio dentro de un bloque), devuelve el motivo del rechazo.
+ * Comprueba un cambio (del pincel o de los formularios). Devuelve el motivo del rechazo si crea
+ * días con dos marcas (dos bloques que se pisan, un asunto propio dentro de un bloque…) o deja
+ * algo fuera de su plazo (por ejemplo, un bloque que acaba en el año siguiente).
  */
-export function comprobarCambio(antes: PlanAnio, despues: PlanAnio): string | null {
+export function comprobarCambio(antes: PlanAnio, despues: PlanAnio, anio: number): string | null {
+  const plazoPrevio = new Set(fueraDePlazo(antes, anio).map((x) => x.mensaje));
+  const nuevoFuera = fueraDePlazo(despues, anio).find((x) => !plazoPrevio.has(x.mensaje));
+  if (nuevoFuera) return `No se puede guardar. ${nuevoFuera.mensaje}`;
+
   const previos = diasSolapados(antes, calcularBloques(antes));
   const bloques = calcularBloques(despues);
   for (const [d, xs] of diasSolapados(despues, bloques)) {
@@ -226,6 +268,7 @@ function borrarRango(plan: PlanAnio, a: ISODate, b: ISODate): PlanAnio {
       const bl = bloques[i];
       return bl.inicio && bl.fin && solapa(bl.inicio, bl.fin) ? null : x;
     }),
+    puentes: plan.puentes.map((x) => (dentro(x) ? null : x)),
     remanente: plan.remanente.filter((d) => !dentro(d)),
     asuntosPropios: plan.asuntosPropios.filter((d) => !dentro(d)),
     noImputables: plan.noImputables.filter((d) => !dentro(d)),

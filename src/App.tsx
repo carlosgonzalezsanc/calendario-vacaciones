@@ -65,19 +65,19 @@ export default function App() {
     [anio],
   );
 
-  /** Cambios desde formularios o la modalidad: no se guardan si hacen que dos marcas se pisen. */
+  /** Cambios desde formularios o la modalidad: no se guardan si dos marcas se pisan o algo sale de su plazo. */
   const setPlanComprobado = useCallback(
     (p: PlanAnio) => {
-      const rechazo = comprobarCambio(planRef.current, p);
+      const rechazo = comprobarCambio(planRef.current, p, anio);
       if (rechazo) setPopup(rechazo);
       else setPlan(p);
     },
-    [setPlan],
+    [setPlan, anio],
   );
 
   const onAplicar = useCallback(
     (desde: ISODate, hasta: ISODate) => {
-      const r = aplicarPincel(planRef.current, pincel, desde, hasta, festivos, { tipoPermiso });
+      const r = aplicarPincel(planRef.current, pincel, desde, hasta, { anio, festivos }, { tipoPermiso });
       if (r.rechazo) {
         setPopup(r.rechazo);
         return;
@@ -85,7 +85,7 @@ export default function App() {
       setPlan(r.plan);
       setMensaje(r.mensaje ?? null);
     },
-    [pincel, festivos, tipoPermiso, setPlan],
+    [pincel, anio, festivos, tipoPermiso, setPlan],
   );
 
   const irA = useCallback((d: ISODate) => {
@@ -382,7 +382,7 @@ function Leyenda({ escolar, verano }: { escolar: boolean; verano: boolean }) {
   );
 }
 
-/** Días marcados (inicio de bloque, días sueltos, San Isidro) que son festivo en la nueva localidad y no lo eran. */
+/** Días marcados (inicio de bloque, días sueltos, puentes, San Isidro) que son festivo en la nueva localidad y no lo eran. */
 function diasMarcadosQuePasanAFestivo(
   plan: PlanAnio,
   bloques: ReturnType<typeof calcularBloques>,
@@ -391,6 +391,7 @@ function diasMarcadosQuePasanAFestivo(
 ): ISODate[] {
   const candidatos = new Set<ISODate>([
     ...bloques.flatMap((b) => (b.inicio ? [b.inicio] : [])),
+    ...plan.puentes.filter((x): x is ISODate => !!x),
     ...plan.remanente,
     ...plan.asuntosPropios,
     ...(plan.sanIsidro ? [plan.sanIsidro] : []),

@@ -19,6 +19,7 @@
   --m-vacaciones: #2563eb;
   --m-remanente: #db2777;
   --m-asuntosPropios: #d97706;
+  --m-puente: #15803d;
   --m-noImputable: #64748b;
   --m-baja: #0e7490;
   --m-permiso: #9333ea;
@@ -51,6 +52,7 @@
     --m-vacaciones: #3b82f6;
     --m-remanente: #ec4899;
     --m-asuntosPropios: #d97706;
+    --m-puente: #16a34a;
     --m-noImputable: #64748b;
     --m-baja: #0891b2;
     --m-permiso: #a855f7;
@@ -411,6 +413,7 @@ input[type='date'] {
 .m-vacaciones { background: var(--m-vacaciones) !important; }
 .m-remanente { background: var(--m-remanente) !important; }
 .m-asuntosPropios { background: var(--m-asuntosPropios) !important; }
+.m-puente { background: var(--m-puente) !important; }
 .m-noImputable { background: var(--m-noImputable) !important; }
 .m-baja { background: var(--m-baja) !important; }
 .m-permiso { background: var(--m-permiso) !important; }
@@ -597,13 +600,14 @@ legend {
 }
 .fila-bloque {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px;
+  gap: 4px 12px;
   padding: 6px 0;
   border-bottom: 1px dashed var(--border);
 }
 .fila-bloque .fin {
-  padding-bottom: 8px;
+  flex-basis: 100%;
 }
 .chips {
   list-style: none;

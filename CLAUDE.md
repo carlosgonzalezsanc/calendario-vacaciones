@@ -40,6 +40,7 @@ Las localidades de la v1 son:
   - Vacaciones (bloque)
   - Remanente de vacaciones (los días generados)
   - Asuntos propios (los 6 días del convenio)
+  - Puente (a costa de un bloque)
   - No imputable al año
   - Baja
   - Permiso por convenio
@@ -61,12 +62,12 @@ Las localidades de la v1 son:
 1. **Modalidades de bloques** (en días naturales): `30`, `15+15`, `20+10`, `20+5+5`, `10+10+10` y `10+10+5+5`.
    - La fecha de fin se calcula como `inicio + días − 1`.
    - Al marcar con el pincel, se sugiere encajar la selección en un bloque de la modalidad elegida.
-2. **Puente a costa del bloque:** ❌ eliminado de la web a petición del usuario (27/10/2026). En el Excel restaba 1 día al bloque.
+2. **Puente a costa del bloque:** el bloque pasa a tener 1 día menos y el día de puente cuenta como vacaciones. Como máximo hay un puente por bloque. (Se quitó y se volvió a añadir a petición de los compañeros, 27/10/2026.)
 3. **Remanente de vacaciones y asuntos propios** (en el Excel eran un único cupo de «días sueltos» = 6 + generados):
    - Asuntos propios: **6** días (art. 102 h).
    - Remanente: tantos días como días generados = días de bloque que caen en domingo + días de bloque que caen en festivo.
    - ⚠️ La regla de días generados está en el Excel, pero no está en la prórroga (ver §4).
-   - Rango permitido: del 1 de enero del año al 31 de enero del año siguiente.
+   - **Plazos:** asuntos propios, como las vacaciones, solo dentro del año natural. El **remanente** es lo único que puede cogerse hasta el **31 de enero del año siguiente**.
 4. **Días no imputables, bajas y permisos por convenio**, cada uno con sus fechas.
 5. **Día de San Isidro:** un único día al año que se coge como día libre. Es la jornada completa que da el art. 87 cuando no se disfruta la reducción de 2 h durante 5 días por fiestas locales (ver §4). Sustituye a la «semana reducida» del Excel.
 6. **Calendario escolar** (informativo y opcional): de momento solo para Madrid. 💡 Para el resto de comunidades hay que conseguir los datos.
@@ -78,7 +79,10 @@ Las localidades de la v1 son:
 - ⚠️ El segundo bloque de 5 días tiene que incluir un sábado (versión VN1.2 del Excel).
 - No puede superarse el cupo de asuntos propios (6) ni el de remanente (días generados).
 - Solo hay un Día de San Isidro al año (el pincel no deja coger un segundo).
-- Las fechas tienen que estar dentro del rango permitido de cada sección.
+- **Plazos** (`src/domain/plazos.ts`):
+  - Vacaciones (bloques), puentes, asuntos propios y Día de San Isidro solo dentro del **año natural**. Un bloque no puede quedar a caballo entre dos años.
+  - Remanente de vacaciones, no imputables, bajas y permisos: hasta el **31/1 del año siguiente**.
+  - El pincel y los formularios no dejan guardar nada fuera de plazo y lo avisan con un popup.
 
 ## 3. Datos de festivos 2027
 
@@ -165,6 +169,6 @@ Reglas para estos datos:
 ## 10. Estructura
 
 - `data/festivos/AAAA.json`, `data/localidades.json`, `data/escolar/<CCAA>.json` — datos mantenidos a mano. Una localidad o un año nuevos = solo datos.
-- `src/domain/` — lógica pura y testeada: `festivos.ts` (`festivosDe`), `bloques.ts` (`calcularBloques`), `calculos.ts` (`diasGenerados`, `marcasPorDia`), `validar.ts` (`validar`), `pincel.ts` (edición del plan).
+- `src/domain/` — lógica pura y testeada: `festivos.ts` (`festivosDe`), `bloques.ts` (`calcularBloques`), `calculos.ts` (`diasGenerados`, `marcasPorDia`, puentes), `plazos.ts` (`fueraDePlazo`), `validar.ts` (`validar`), `pincel.ts` (edición del plan).
 - `src/storage/StorageRepository.ts` — interfaz `load()`/`save()` y la implementación en `localStorage`.
 - `src/ui/` y `src/App.tsx` — interfaz React.

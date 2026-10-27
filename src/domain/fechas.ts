@@ -65,7 +65,15 @@ export function nombreMes(anio: number, mes: number): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** Primer y último día del periodo de imputación: 1/1/año – 31/1/año+1 (FINI/FFIN del Excel). */
+/**
+ * Periodo que muestra el calendario: 1/1/año – 31/1/año+1 (FINI/FFIN del Excel).
+ * Es también el plazo del remanente de vacaciones, las bajas, los permisos y los no imputables.
+ */
 export function periodoAnio(anio: number): { inicio: ISODate; fin: ISODate } {
   return { inicio: `${anio}-01-01`, fin: `${anio + 1}-01-31` };
+}
+
+/** Año natural: plazo de las vacaciones, los puentes, los asuntos propios y el Día de San Isidro. */
+export function anioNatural(anio: number): { inicio: ISODate; fin: ISODate } {
+  return { inicio: `${anio}-01-01`, fin: `${anio}-12-31` };
 }

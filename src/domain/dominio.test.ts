@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FESTIVOS, LOCALIDADES, localidadPorId } from '../datos';
 import { calcularBloques, encajarSeleccion } from './bloques';
-import { diasGenerados } from './calculos';
+import { candidatosPuente, diasGenerados } from './calculos';
 import { festivosDe, mapaFestivos } from './festivos';
 import { aplicarPincel, comprobarCambio, crearPlanVacio } from './pincel';
 import type { PlanAnio } from './tipos';
@@ -13,6 +13,7 @@ const festivosMap = (id: string) => mapaFestivos(festivosDe(localidadPorId(id), 
 const madrid = festivosMap('madrid');
 const codigos = (plan: PlanAnio, f = madrid) => validar(plan, { anio: ANIO, festivos: f }).map((i) => i.codigo);
 const opciones = { tipoPermiso: 'otro' as const };
+const ctx = { anio: ANIO, festivos: madrid };
 
 describe('festivosDe', () => {
   const esperados: Record<string, number> = {
@@ -68,6 +69,13 @@ describe('bloques', () => {
     expect(b3.fin).toBe('2027-07-09');
   });
 
+  it('el puente resta un día al bloque', () => {
+    const plan = { ...crearPlanVacio('15+15'), bloques: ['2027-08-02', null], puentes: ['2027-12-07', null] };
+    const [b1] = calcularBloques(plan);
+    expect(b1.dias).toBe(14);
+    expect(b1.fin).toBe('2027-08-15');
+  });
+
   it('la selección se encaja en el bloque libre de tamaño más parecido', () => {
     const plan = crearPlanVacio('10+10+5+5');
     expect(encajarSeleccion(plan, '2027-08-02', '2027-08-09')?.indice).toBe(0); // 8 días → bloque de 10
@@ -95,6 +103,11 @@ describe('días generados (remanente de vacaciones)', () => {
     const g = diasGenerados(calcularBloques(plan), madrid);
     expect(g.festivos).toEqual(['2027-05-01']);
     expect(g.total).toBe(2); // domingo 2/5 + sábado festivo 1/5
+  });
+
+  it('el día de puente no genera días', () => {
+    const plan = { ...crearPlanVacio('30'), bloques: [null], puentes: ['2027-12-07'] };
+    expect(diasGenerados(calcularBloques(plan), madrid).total).toBe(0);
   });
 });
 
@@ -140,16 +153,29 @@ describe('validaciones', () => {
     expect(codigos({ ...plan, remanente: [...plan.remanente, '2027-02-03'] })).toContain('CUPO_REMANENTE');
   });
 
-  it('fechas fuera del 1/1/año – 31/1/año+1', () => {
-    expect(codigos({ ...crearPlanVacio(), asuntosPropios: ['2028-02-01'] })).toContain('FUERA_DE_RANGO');
-    expect(codigos({ ...crearPlanVacio(), asuntosPropios: ['2028-01-31'] })).not.toContain('FUERA_DE_RANGO');
+  it('vacaciones, puentes, asuntos propios y San Isidro solo dentro del año', () => {
+    const vacio = crearPlanVacio('15+15');
+    expect(codigos({ ...vacio, asuntosPropios: ['2028-01-10'] })).toContain('FUERA_DE_PLAZO');
+    expect(codigos({ ...vacio, asuntosPropios: ['2027-12-30'] })).not.toContain('FUERA_DE_PLAZO');
+    expect(codigos({ ...vacio, sanIsidro: '2028-01-03' })).toContain('FUERA_DE_PLAZO');
+    expect(codigos({ ...vacio, puentes: ['2028-01-07', null] })).toContain('FUERA_DE_PLAZO');
+    // Un bloque no puede quedar a caballo entre 2027 y 2028.
+    expect(codigos({ ...vacio, bloques: ['2027-12-20', null] })).toContain('FUERA_DE_PLAZO');
+    expect(codigos({ ...vacio, bloques: ['2027-12-17', null] })).not.toContain('FUERA_DE_PLAZO');
+  });
+
+  it('el remanente, las bajas y los no imputables llegan hasta el 31 de enero', () => {
+    const vacio = crearPlanVacio();
+    expect(codigos({ ...vacio, remanente: ['2028-01-31'] })).not.toContain('FUERA_DE_PLAZO');
+    expect(codigos({ ...vacio, remanente: ['2028-02-01'] })).toContain('FUERA_DE_PLAZO');
+    expect(codigos({ ...vacio, bajas: ['2028-01-20'] })).not.toContain('FUERA_DE_PLAZO');
   });
 });
 
 describe('pincel', () => {
   it('clic sobre un día de un bloque lo cancela entero', () => {
     const plan = { ...crearPlanVacio('15+15'), bloques: ['2027-08-02', null] };
-    const r = aplicarPincel(plan, 'vacaciones', '2027-08-05', '2027-08-05', madrid, opciones);
+    const r = aplicarPincel(plan, 'vacaciones', '2027-08-05', '2027-08-05', ctx, opciones);
     expect(r.rechazo).toBeUndefined();
     expect(r.plan.bloques).toEqual([null, null]);
   });
@@ -157,40 +183,78 @@ describe('pincel', () => {
   it('un asunto propio dentro de un bloque se rechaza y no se guarda', () => {
     // Bloque del 5 al 14 de enero; asunto propio el 8 de enero.
     const plan = { ...crearPlanVacio('10+10+10'), bloques: ['2027-01-05', null, null] };
-    const r = aplicarPincel(plan, 'asuntosPropios', '2027-01-08', '2027-01-08', madrid, opciones);
+    const r = aplicarPincel(plan, 'asuntosPropios', '2027-01-08', '2027-01-08', ctx, opciones);
     expect(r.rechazo).toMatch(/08\/01\/2027.*Vacaciones \(bloque 1/);
     expect(r.plan).toBe(plan);
   });
 
   it('un bloque que se solapa con otro se rechaza y no se guarda', () => {
     const plan = { ...crearPlanVacio('15+15'), bloques: ['2027-08-02', null] };
-    const r = aplicarPincel(plan, 'vacaciones', '2027-07-26', '2027-08-09', madrid, opciones);
+    const r = aplicarPincel(plan, 'vacaciones', '2027-07-26', '2027-08-09', ctx, opciones);
     expect(r.rechazo).toMatch(/se solapa/);
     expect(r.plan.bloques).toEqual(['2027-08-02', null]);
   });
 
   it('desde los formularios tampoco se pueden solapar bloques ni días', () => {
     const plan = { ...crearPlanVacio('15+15'), bloques: ['2027-08-02', null] };
-    expect(comprobarCambio(plan, { ...plan, bloques: ['2027-08-02', '2027-08-10'] })).toMatch(/dos bloques/);
-    expect(comprobarCambio(plan, { ...plan, asuntosPropios: ['2027-08-04'] })).toMatch(/04\/08\/2027/);
-    expect(comprobarCambio(plan, { ...plan, asuntosPropios: ['2027-09-01'] })).toBeNull();
+    expect(comprobarCambio(plan, { ...plan, bloques: ['2027-08-02', '2027-08-10'] }, ANIO)).toMatch(/dos bloques/);
+    expect(comprobarCambio(plan, { ...plan, asuntosPropios: ['2027-08-04'] }, ANIO)).toMatch(/04\/08\/2027/);
+    expect(comprobarCambio(plan, { ...plan, asuntosPropios: ['2027-09-01'] }, ANIO)).toBeNull();
   });
 
   it('arrastrar asuntos propios solo marca laborables y un segundo arrastre los quita', () => {
-    const r = aplicarPincel(crearPlanVacio(), 'asuntosPropios', '2027-03-18', '2027-03-22', madrid, opciones);
+    const r = aplicarPincel(crearPlanVacio(), 'asuntosPropios', '2027-03-18', '2027-03-22', ctx, opciones);
     expect(r.plan.asuntosPropios).toEqual(['2027-03-18', '2027-03-22']); // 19/3 festivo, 20–21 finde
-    const r2 = aplicarPincel(r.plan, 'asuntosPropios', '2027-03-18', '2027-03-22', madrid, opciones);
+    const r2 = aplicarPincel(r.plan, 'asuntosPropios', '2027-03-18', '2027-03-22', ctx, opciones);
     expect(r2.plan.asuntosPropios).toEqual([]);
   });
 
+  it('un bloque que acabaría en el año siguiente se rechaza', () => {
+    const r = aplicarPincel(crearPlanVacio('15+15'), 'vacaciones', '2027-12-20', '2027-12-20', ctx, opciones);
+    expect(r.rechazo).toMatch(/dentro de 2027/);
+    expect(r.plan.bloques).toEqual([null, null]);
+  });
+
+  it('asuntos propios en enero del año siguiente se rechazan; el remanente sí se permite', () => {
+    const ap = aplicarPincel(crearPlanVacio(), 'asuntosPropios', '2028-01-10', '2028-01-10', ctx, opciones);
+    expect(ap.rechazo).toMatch(/dentro de 2027/);
+    const rem = aplicarPincel(crearPlanVacio(), 'remanente', '2028-01-10', '2028-01-10', ctx, opciones);
+    expect(rem.rechazo).toBeUndefined();
+    expect(rem.plan.remanente).toEqual(['2028-01-10']);
+  });
+
+  it('el puente se asigna al primer bloque sin puente y se cancela pulsándolo', () => {
+    const r = aplicarPincel(crearPlanVacio('15+15'), 'puente', '2027-12-07', '2027-12-07', ctx, opciones);
+    expect(r.plan.puentes).toEqual(['2027-12-07', null]);
+    const c = aplicarPincel(r.plan, 'puente', '2027-12-07', '2027-12-07', ctx, opciones);
+    expect(c.plan.puentes).toEqual([null, null]);
+  });
+
+  it('quitar un puente que haría crecer el bloque hasta pisar otra marca se rechaza', () => {
+    // Bloque de 15 con puente: 02/08–15/08. Sin puente acabaría el 16/08, que es asunto propio.
+    const plan = {
+      ...crearPlanVacio('15+15'),
+      bloques: ['2027-08-02', null],
+      puentes: ['2027-12-07', null],
+      asuntosPropios: ['2027-08-16'],
+    };
+    const r = aplicarPincel(plan, 'puente', '2027-12-07', '2027-12-07', ctx, opciones);
+    expect(r.rechazo).toMatch(/16\/08\/2027/);
+    expect(r.plan).toBe(plan);
+  });
+
+  it('el 7/12/2027 es candidato a puente en Madrid', () => {
+    expect(candidatosPuente(ANIO, madrid).has('2027-12-07')).toBe(true);
+  });
+
   it('el Día de San Isidro es un solo día al año', () => {
-    const r = aplicarPincel(crearPlanVacio(), 'sanIsidro', '2027-05-14', '2027-05-14', madrid, opciones);
+    const r = aplicarPincel(crearPlanVacio(), 'sanIsidro', '2027-05-14', '2027-05-14', ctx, opciones);
     expect(r.plan.sanIsidro).toBe('2027-05-14');
-    const otro = aplicarPincel(r.plan, 'sanIsidro', '2027-05-17', '2027-05-17', madrid, opciones);
+    const otro = aplicarPincel(r.plan, 'sanIsidro', '2027-05-17', '2027-05-17', ctx, opciones);
     expect(otro.rechazo).toMatch(/Solo puedes coger un Día de San Isidro/);
-    const rango = aplicarPincel(crearPlanVacio(), 'sanIsidro', '2027-05-10', '2027-05-14', madrid, opciones);
+    const rango = aplicarPincel(crearPlanVacio(), 'sanIsidro', '2027-05-10', '2027-05-14', ctx, opciones);
     expect(rango.rechazo).toBeDefined();
-    const cancelado = aplicarPincel(r.plan, 'sanIsidro', '2027-05-14', '2027-05-14', madrid, opciones);
+    const cancelado = aplicarPincel(r.plan, 'sanIsidro', '2027-05-14', '2027-05-14', ctx, opciones);
     expect(cancelado.plan.sanIsidro).toBeNull();
   });
 });
@@ -222,7 +286,7 @@ describe('persistencia', () => {
       },
     });
     expect(datos.schemaVersion).toBe(2);
-    expect(JSON.stringify(datos)).not.toContain('puentes');
+    expect(datos.planes['2027'].puentes).toEqual(['2027-12-07']);
     expect(datos.planes['2027'].asuntosPropios).toEqual(sueltos.slice(0, 6));
     expect(datos.planes['2027'].remanente).toEqual(['2027-02-09']);
     expect(datos.planes['2027'].sanIsidro).toBeNull();
