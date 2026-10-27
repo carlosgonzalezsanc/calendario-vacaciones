@@ -1,0 +1,8 @@
+[
+  {"id": "madrid", "nombre": "Madrid", "ccaa": "MD", "ccaaNombre": "Comunidad de Madrid"},
+  {"id": "toledo", "nombre": "Toledo", "ccaa": "CM", "ccaaNombre": "Castilla-La Mancha"},
+  {"id": "almeria", "nombre": "Almería", "ccaa": "AN", "ccaaNombre": "Andalucía"},
+  {"id": "burgos", "nombre": "Burgos", "ccaa": "CL", "ccaaNombre": "Castilla y León"},
+  {"id": "vigo", "nombre": "Vigo", "ccaa": "GA", "ccaaNombre": "Galicia"},
+  {"id": "las-palmas-gc", "nombre": "Las Palmas de Gran Canaria", "ccaa": "CN", "ccaaNombre": "Canarias", "isla": "Gran Canaria"}
+]

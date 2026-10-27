@@ -1,0 +1,77 @@
+{
+  "anio": 2027,
+  "fuentes": {
+    "nacional": "Resolución de 8/10/2026 de la DG de Trabajo (BOE 13/10/2026)",
+    "convenio": "Art. 88 de la prórroga del III CEV"
+  },
+  "nacional": [
+    {"fecha": "2027-01-01", "nombre": "Año Nuevo"},
+    {"fecha": "2027-01-06", "nombre": "Epifanía del Señor"},
+    {"fecha": "2027-03-26", "nombre": "Viernes Santo"},
+    {"fecha": "2027-05-01", "nombre": "Fiesta del Trabajo"},
+    {"fecha": "2027-10-12", "nombre": "Fiesta Nacional de España"},
+    {"fecha": "2027-11-01", "nombre": "Todos los Santos"},
+    {"fecha": "2027-12-06", "nombre": "Día de la Constitución"},
+    {"fecha": "2027-12-08", "nombre": "Inmaculada Concepción"},
+    {"fecha": "2027-12-25", "nombre": "Natividad del Señor"}
+  ],
+  "convenio": [
+    {"fecha": "2027-12-24", "nombre": "Nochebuena (art. 88 CEV)"},
+    {"fecha": "2027-12-31", "nombre": "Nochevieja (art. 88 CEV)"}
+  ],
+  "eneroSiguiente": {
+    "verificar": true,
+    "nota": "El calendario laboral de 2028 aún no está publicado. Si existe data/festivos/2028.json, se usan sus festivos de enero.",
+    "dias": [
+      {"fecha": "2028-01-01", "nombre": "Año Nuevo", "ambito": "nacional"},
+      {"fecha": "2028-01-06", "nombre": "Epifanía del Señor", "ambito": "nacional"}
+    ]
+  },
+  "autonomico": {
+    "MD": {"fuente": "Decreto 82/2026 (BOCM 01/10/2026)", "verificar": false, "dias": [
+      {"fecha": "2027-03-19", "nombre": "San José"},
+      {"fecha": "2027-03-25", "nombre": "Jueves Santo"},
+      {"fecha": "2027-08-16", "nombre": "Asunción (traslado)"}]},
+    "CM": {"fuente": "Decreto 34/2026 (DOCM 13/07/2026)", "verificar": false, "dias": [
+      {"fecha": "2027-03-25", "nombre": "Jueves Santo"},
+      {"fecha": "2027-05-27", "nombre": "Corpus Christi"},
+      {"fecha": "2027-05-31", "nombre": "Día de Castilla-La Mancha"}]},
+    "AN": {"fuente": "Decreto 84/2026 (BOJA 05/05/2026)", "verificar": false, "dias": [
+      {"fecha": "2027-03-01", "nombre": "Día de Andalucía (traslado)"},
+      {"fecha": "2027-03-25", "nombre": "Jueves Santo"},
+      {"fecha": "2027-08-16", "nombre": "Asunción (traslado)"}]},
+    "CL": {"fuente": "Decreto JCyL calendario 2027 — falta nº y BOCYL", "verificar": true, "dias": [
+      {"fecha": "2027-03-25", "nombre": "Jueves Santo"},
+      {"fecha": "2027-04-23", "nombre": "Día de Castilla y León"},
+      {"fecha": "2027-08-16", "nombre": "Asunción (traslado)"}]},
+    "GA": {"fuente": "Decreto 68/2026 (DOG) — falta el texto oficial", "verificar": true, "dias": [
+      {"fecha": "2027-03-19", "nombre": "San José"},
+      {"fecha": "2027-03-25", "nombre": "Jueves Santo"},
+      {"fecha": "2027-05-17", "nombre": "Día das Letras Galegas"}]},
+    "CN": {"fuente": "Decreto 115/2026 (BOC 03/07/2026)", "verificar": false, "dias": [
+      {"fecha": "2027-03-25", "nombre": "Jueves Santo"},
+      {"fecha": "2027-05-30", "nombre": "Día de Canarias (cae en domingo)"},
+      {"fecha": "2027-08-16", "nombre": "Asunción (traslado)"}],
+      "insular": {"Gran Canaria": [{"fecha": "2027-09-08", "nombre": "Nuestra Señora del Pino"}]}}
+  },
+  "local": {
+    "madrid": {"ccaa": "MD", "verificar": true, "fuente": "Ayuntamiento (Pleno 29/09/2026); falta el BOCM", "dias": [
+      {"fecha": "2027-05-15", "nombre": "San Isidro (sábado)"},
+      {"fecha": "2027-11-09", "nombre": "Nuestra Señora de la Almudena"}]},
+    "toledo": {"ccaa": "CM", "verificar": true, "fuente": "CMM y ENCLM (Junta de Gobierno Local)", "dias": [
+      {"fecha": "2027-03-19", "nombre": "San José (traslado de San Ildefonso)"},
+      {"fecha": "2027-03-29", "nombre": "Lunes de Pascua"}]},
+    "almeria": {"ccaa": "AN", "verificar": true, "fuente": "COPE (Pleno municipal)", "dias": [
+      {"fecha": "2027-06-24", "nombre": "San Juan"},
+      {"fecha": "2027-08-28", "nombre": "Virgen del Mar (sábado)"}]},
+    "burgos": {"ccaa": "CL", "verificar": true, "fuente": "Cuenta oficial del Ayuntamiento en X y prensa local", "dias": [
+      {"fecha": "2027-06-04", "nombre": "Curpillos"},
+      {"fecha": "2027-06-29", "nombre": "San Pedro y San Pablo"}]},
+    "vigo": {"ccaa": "GA", "verificar": false, "fuente": "DOG 26/10/2026", "dias": [
+      {"fecha": "2027-03-29", "nombre": "Reconquista (traslado)"},
+      {"fecha": "2027-08-16", "nombre": "San Roque"}]},
+    "las-palmas-gc": {"ccaa": "CN", "isla": "Gran Canaria", "verificar": true, "fuente": "Agregadores que citan el BOC (Orden de 7/8/2026)", "dias": [
+      {"fecha": "2027-02-09", "nombre": "Martes de Carnaval"},
+      {"fecha": "2027-06-24", "nombre": "Fundación de la Ciudad"}]}
+  }
+}

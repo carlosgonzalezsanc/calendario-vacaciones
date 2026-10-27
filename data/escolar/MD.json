@@ -1,0 +1,15 @@
+{
+  "ccaa": "MD",
+  "curso": "2026-2027",
+  "verificar": true,
+  "fuente": "Excel Calendario_2027_calculo_vacaciones_vN2_1p (sin fuente oficial)",
+  "noLectivos": [
+    {"inicio": "2027-01-02", "fin": "2027-01-10", "nombre": "Navidades 2026-2027"},
+    {"inicio": "2027-02-12", "fin": "2027-02-15", "nombre": "Días sueltos"},
+    {"inicio": "2027-03-19", "fin": "2027-03-29", "nombre": "Semana Santa"},
+    {"inicio": "2027-06-19", "fin": "2027-09-06", "nombre": "Verano"}
+  ],
+  "mediaJornada": [
+    {"inicio": "2027-06-01", "fin": "2027-06-18", "nombre": "Media jornada de verano"}
+  ]
+}

@@ -1,0 +1,9 @@
+node_modules
+dist
+*.local
+.claude/
+
+# Material de referencia: se queda solo en local (el Excel es una herramienta interna
+# y los convenios están publicados en el BOE). Ver docs/referencia/README.md.
+docs/referencia/*.xlsx
+docs/referencia/*.pdf
