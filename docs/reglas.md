@@ -76,8 +76,8 @@ En el Excel las validaciones son de tipo «fecha entre». En la web, el pincel y
 💡 Regla indicada por el usuario (28/10/2026), coherente con el art. 87 de la prórroga ✅. Según ese artículo, la reducción se aplica «exclusivamente a aquellas personas trabajadoras que estén desempeñando efectivamente su actividad laboral durante dichos días».
 
 - El Día de San Isidro solo se puede usar si se trabajan **al menos 4 días** de la semana de fiestas locales (Madrid 2027: **10–14 de mayo**).
-- Con **2 o más días** de vacaciones (bloque o puente) o días sueltos (remanente o asuntos propios) en esa semana, **se pierde el derecho**. Solo cuentan los días laborables.
-- ⚠️ Las bajas, los permisos por convenio y los no imputables **no** cuentan como ausencia para esta regla. Pendiente de confirmar.
+- Con **2 o más días de ausencia** en esa semana (vacaciones, puente, remanente, asuntos propios, baja, permiso o no imputable), **se pierde el derecho**. Solo cuentan los días laborables.
+- Las bajas, los permisos por convenio y los no imputables **también** cuentan como ausencia (confirmado por el usuario, 28/10/2026).
 - En la web es un **aviso**, no un bloqueo: sale un popup al perder el derecho (o al marcar el día sin tenerlo) y queda en la lista de avisos.
 
 ## 5. Un día, una marca

@@ -70,7 +70,7 @@ Las localidades de la v1 son:
    - **Plazos:** asuntos propios, como las vacaciones, solo dentro del año natural. El **remanente** es lo único que puede cogerse hasta el **31 de enero del año siguiente**.
 4. **Días no imputables, bajas y permisos por convenio**, cada uno con sus fechas.
 5. **Día de San Isidro:** un único día al año que se coge como día libre. Es la jornada completa que da el art. 87 cuando no se disfruta la reducción de 2 h durante 5 días por fiestas locales (ver §4). Sustituye a la «semana reducida» del Excel.
-   - **Derecho:** solo se tiene si se trabajan al menos **4 días de la semana de fiestas locales** (Madrid 2027: del 10 al 14 de mayo). Con 2 o más días de ausencia en esa semana se pierde. Cuentan como ausencia las vacaciones (bloques y puentes) y los días sueltos (remanente y asuntos propios); las bajas, los permisos y los no imputables no cuentan.
+   - **Derecho:** solo se tiene si se trabajan al menos **4 días de la semana de fiestas locales** (Madrid 2027: del 10 al 14 de mayo). Con 2 o más días de ausencia en esa semana se pierde. Cuenta como ausencia cualquier marca: vacaciones (bloques y puentes), días sueltos (remanente y asuntos propios), bajas, permisos por convenio y no imputables.
    - La semana va en los datos (`semanaFiestaLocal` de cada localidad en `data/festivos/AAAA.json`). Si una localidad no la tiene, no se comprueba.
    - Si un cambio hace perder el derecho, o se marca el día sin tenerlo, sale un popup de **aviso**. El cambio sí se guarda y el aviso aparece también en «Avisos» (`src/domain/sanIsidro.ts`).
 6. **Calendario escolar** (informativo y opcional): de momento solo para Madrid. 💡 Para el resto de comunidades hay que conseguir los datos.
@@ -82,7 +82,7 @@ Las localidades de la v1 son:
 - ⚠️ El segundo bloque de 5 días tiene que incluir un sábado (versión VN1.2 del Excel).
 - No puede superarse el cupo de asuntos propios (6) ni el de remanente (días generados).
 - Solo hay un Día de San Isidro al año (el pincel no deja coger un segundo).
-- Aviso (no bloquea) si hay 2 o más días de vacaciones o días sueltos en la semana de fiestas locales: se pierde el Día de San Isidro.
+- Aviso (no bloquea) si hay 2 o más días de ausencia en la semana de fiestas locales: se pierde el Día de San Isidro.
 - **Plazos** (`src/domain/plazos.ts`):
   - Vacaciones (bloques), puentes, asuntos propios y Día de San Isidro solo dentro del **año natural**. Un bloque no puede quedar a caballo entre dos años.
   - Remanente de vacaciones, no imputables, bajas y permisos: hasta el **31/1 del año siguiente**.

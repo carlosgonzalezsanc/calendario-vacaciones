@@ -327,13 +327,22 @@ describe('derecho al Día de San Isidro (semana de fiestas locales)', () => {
     expect(r.aviso).toMatch(/lo pierdes/);
   });
 
-  it('marcar el Día de San Isidro sin derecho avisa; las bajas no cuentan como ausencia', () => {
+  it('marcar el Día de San Isidro sin derecho avisa; bajas, permisos y no imputables también cuentan', () => {
     const plan = { ...crearPlanVacio(), asuntosPropios: ['2027-05-10', '2027-05-11'] };
     const r = aplicarPincel(plan, 'sanIsidro', '2027-06-01', '2027-06-01', ctxMadrid, opciones);
     expect(r.plan.sanIsidro).toBe('2027-06-01');
     expect(r.aviso).toMatch(/01\/06\/2027\) no se podría disfrutar/);
     const conBajas = { ...crearPlanVacio(), bajas: ['2027-05-10', '2027-05-11'] };
-    expect(estadoSanIsidro(conBajas, semana, madrid)?.pierdeDerecho).toBe(false);
+    expect(estadoSanIsidro(conBajas, semana, madrid)?.pierdeDerecho).toBe(true);
+    const mixto = {
+      ...crearPlanVacio(),
+      noImputables: ['2027-05-10'],
+      permisos: [{ id: 'p', inicio: '2027-05-13', fin: '2027-05-13', tipo: 'otro' as const }],
+    };
+    expect(estadoSanIsidro(mixto, semana, madrid)?.diasAusencia).toEqual(['2027-05-10', '2027-05-13']);
+    // Una sola baja no hace perder el derecho.
+    const unaBaja = { ...crearPlanVacio(), bajas: ['2027-05-12'] };
+    expect(estadoSanIsidro(unaBaja, semana, madrid)?.pierdeDerecho).toBe(false);
   });
 
   it('sin semana de fiestas en los datos no se comprueba', () => {

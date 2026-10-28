@@ -10,8 +10,16 @@ import { esLaborable, type MapaFestivos } from './festivos';
  */
 export const MAX_DIAS_AUSENCIA_SEMANA_FIESTA = 1;
 
-/** Ausencias que cuentan: vacaciones (bloques y puentes) y días sueltos (remanente y asuntos propios). */
-const AUSENCIAS: TipoMarca[] = ['vacaciones', 'puente', 'remanente', 'asuntosPropios'];
+/** Cuenta como ausencia cualquier marca salvo el propio Día de San Isidro. */
+const AUSENCIAS: TipoMarca[] = [
+  'vacaciones',
+  'puente',
+  'remanente',
+  'asuntosPropios',
+  'noImputable',
+  'baja',
+  'permiso',
+];
 
 export interface EstadoSanIsidro {
   semana: SemanaFiestaLocal;
@@ -36,7 +44,7 @@ export function estadoSanIsidro(
 export function textoPerdidaSanIsidro(e: EstadoSanIsidro): string {
   const f = formatoCorto;
   const nombre = e.semana.nombre ?? 'semana de fiestas locales';
-  return `Tienes ${e.diasAusencia.length} días de vacaciones o días sueltos en la ${nombre} (${f(e.semana.inicio)} – ${f(e.semana.fin)}). Para tener derecho al Día de San Isidro hay que trabajar al menos 4 días de esa semana, así que lo pierdes.`;
+  return `Tienes ${e.diasAusencia.length} días de ausencia (vacaciones, días sueltos, bajas, permisos o no imputables) en la ${nombre} (${f(e.semana.inicio)} – ${f(e.semana.fin)}). Para tener derecho al Día de San Isidro hay que trabajar al menos 4 días de esa semana, así que lo pierdes.`;
 }
 
 /**
