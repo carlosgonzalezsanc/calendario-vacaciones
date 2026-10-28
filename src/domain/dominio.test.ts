@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { FESTIVOS, LOCALIDADES, localidadPorId } from '../datos';
 import { calcularBloques, encajarSeleccion } from './bloques';
 import { candidatosPuente, diasGenerados } from './calculos';
-import { festivosDe, mapaFestivos } from './festivos';
+import { festivosDe, mapaFestivos, semanaFiestaLocal } from './festivos';
 import { aplicarPincel, comprobarCambio, crearPlanVacio } from './pincel';
+import { estadoSanIsidro } from './sanIsidro';
 import type { PlanAnio } from './tipos';
 import { validar } from './validar';
 import { normalizarDatos } from '../storage/StorageRepository';
@@ -294,5 +295,50 @@ describe('persistencia', () => {
 
   it('rechaza versiones de esquema desconocidas', () => {
     expect(() => normalizarDatos({ schemaVersion: 99 })).toThrow();
+  });
+});
+
+describe('derecho al Día de San Isidro (semana de fiestas locales)', () => {
+  const semana = semanaFiestaLocal(localidadPorId('madrid'), ANIO, FESTIVOS);
+  const ctxMadrid = { ...ctx, semanaFiestaLocal: semana };
+
+  it('Madrid 2027: la semana de San Isidro es del 10 al 14 de mayo', () => {
+    expect(semana).toMatchObject({ inicio: '2027-05-10', fin: '2027-05-14' });
+    expect(semanaFiestaLocal(localidadPorId('vigo'), ANIO, FESTIVOS)).toBeNull();
+  });
+
+  it('un día suelto en la semana no hace perder el derecho; el segundo sí, con aviso', () => {
+    const r1 = aplicarPincel(crearPlanVacio(), 'asuntosPropios', '2027-05-11', '2027-05-11', ctxMadrid, opciones);
+    expect(r1.aviso).toBeUndefined();
+    expect(estadoSanIsidro(r1.plan, semana, madrid)?.pierdeDerecho).toBe(false);
+    const r2 = aplicarPincel(r1.plan, 'remanente', '2027-05-12', '2027-05-12', ctxMadrid, opciones);
+    expect(r2.rechazo).toBeUndefined();
+    expect(r2.plan.remanente).toEqual(['2027-05-12']); // se guarda igualmente
+    expect(r2.aviso).toMatch(/2 días .* semana de San Isidro .*lo pierdes/);
+    const avisos = validar(r2.plan, ctxMadrid).filter((i) => i.codigo === 'SAN_ISIDRO_PERDIDO');
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0].nivel).toBe('aviso');
+  });
+
+  it('un bloque de vacaciones con dos días de esa semana hace perder el derecho', () => {
+    // Bloque de 10 días del 2 al 11 de mayo: incluye el lunes 10 y el martes 11.
+    const r = aplicarPincel(crearPlanVacio('10+10+10'), 'vacaciones', '2027-05-02', '2027-05-11', ctxMadrid, opciones);
+    expect(r.plan.bloques[0]).toBe('2027-05-02');
+    expect(r.aviso).toMatch(/lo pierdes/);
+  });
+
+  it('marcar el Día de San Isidro sin derecho avisa; las bajas no cuentan como ausencia', () => {
+    const plan = { ...crearPlanVacio(), asuntosPropios: ['2027-05-10', '2027-05-11'] };
+    const r = aplicarPincel(plan, 'sanIsidro', '2027-06-01', '2027-06-01', ctxMadrid, opciones);
+    expect(r.plan.sanIsidro).toBe('2027-06-01');
+    expect(r.aviso).toMatch(/01\/06\/2027\) no se podría disfrutar/);
+    const conBajas = { ...crearPlanVacio(), bajas: ['2027-05-10', '2027-05-11'] };
+    expect(estadoSanIsidro(conBajas, semana, madrid)?.pierdeDerecho).toBe(false);
+  });
+
+  it('sin semana de fiestas en los datos no se comprueba', () => {
+    const plan = { ...crearPlanVacio(), asuntosPropios: ['2027-05-10', '2027-05-11'] };
+    expect(estadoSanIsidro(plan, null, madrid)).toBeNull();
+    expect(codigos(plan)).not.toContain('SAN_ISIDRO_PERDIDO');
   });
 });

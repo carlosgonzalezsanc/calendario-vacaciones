@@ -1,5 +1,14 @@
-import type { AmbitoFestivo, DatosFestivosAnio, Festivo, Localidad } from './tipos';
+import type { AmbitoFestivo, DatosFestivosAnio, Festivo, Localidad, SemanaFiestaLocal } from './tipos';
 import { esFinDeSemana, type ISODate } from './fechas';
+
+/** Semana de fiestas locales de la localidad en ese año (null si no está en los datos). */
+export function semanaFiestaLocal(
+  localidad: Localidad,
+  anio: number,
+  datos: Record<number, DatosFestivosAnio>,
+): SemanaFiestaLocal | null {
+  return datos[anio]?.local[localidad.id]?.semanaFiestaLocal ?? null;
+}
 
 /** Si un mismo día aparece en varios ámbitos, gana el de más rango. */
 const PRIORIDAD: Record<AmbitoFestivo, number> = {

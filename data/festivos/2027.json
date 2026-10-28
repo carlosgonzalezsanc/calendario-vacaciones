@@ -55,7 +55,9 @@
       "insular": {"Gran Canaria": [{"fecha": "2027-09-08", "nombre": "Nuestra Señora del Pino"}]}}
   },
   "local": {
-    "madrid": {"ccaa": "MD", "verificar": true, "fuente": "Ayuntamiento (Pleno 29/09/2026); falta el BOCM", "dias": [
+    "madrid": {"ccaa": "MD", "verificar": true, "fuente": "Ayuntamiento (Pleno 29/09/2026); falta el BOCM",
+      "semanaFiestaLocal": {"inicio": "2027-05-10", "fin": "2027-05-14", "nombre": "semana de San Isidro"},
+      "dias": [
       {"fecha": "2027-05-15", "nombre": "San Isidro (sábado)"},
       {"fecha": "2027-11-09", "nombre": "Nuestra Señora de la Almudena"}]},
     "toledo": {"ccaa": "CM", "verificar": true, "fuente": "CMM y ENCLM (Junta de Gobierno Local)", "dias": [

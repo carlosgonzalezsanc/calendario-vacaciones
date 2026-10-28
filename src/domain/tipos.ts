@@ -27,8 +27,22 @@ export interface DatosFestivosAnio {
   >;
   local: Record<
     string,
-    { ccaa: string; isla?: string; verificar?: boolean; fuente?: string; dias: DiaFestivoDato[] }
+    {
+      ccaa: string;
+      isla?: string;
+      verificar?: boolean;
+      fuente?: string;
+      /** Semana de fiestas locales (art. 87). Sin ella no se comprueba el derecho al Día de San Isidro. */
+      semanaFiestaLocal?: SemanaFiestaLocal;
+      dias: DiaFestivoDato[];
+    }
   >;
+}
+
+export interface SemanaFiestaLocal {
+  inicio: ISODate;
+  fin: ISODate;
+  nombre?: string;
 }
 
 export interface Localidad {

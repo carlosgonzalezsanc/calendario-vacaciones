@@ -3,8 +3,9 @@ import { ANIOS, ESCOLAR, FESTIVOS, LOCALIDADES, localidadPorId } from './datos';
 import { calcularBloques, cambiarModalidad } from './domain/bloques';
 import { diasGenerados, marcasPorDia } from './domain/calculos';
 import { formatoCorto, periodoAnio, type ISODate } from './domain/fechas';
-import { festivosDe, mapaFestivos, NOMBRE_AMBITO, type MapaFestivos } from './domain/festivos';
+import { festivosDe, mapaFestivos, NOMBRE_AMBITO, semanaFiestaLocal, type MapaFestivos } from './domain/festivos';
 import { aplicarPincel, comprobarCambio, crearPlanVacio, type Pincel } from './domain/pincel';
+import { avisoSanIsidro, estadoSanIsidro } from './domain/sanIsidro';
 import type { PlanAnio, TipoPermiso } from './domain/tipos';
 import { validar } from './domain/validar';
 import {
@@ -15,7 +16,7 @@ import {
   type StorageRepository,
 } from './storage/StorageRepository';
 import { Calendario } from './ui/Calendario';
-import { Popup } from './ui/Popup';
+import { Popup, type MensajePopup } from './ui/Popup';
 import { Formularios, NOMBRE_PERMISO } from './ui/Formularios';
 import { META_MARCA, nombrePincel, PINCELES } from './ui/marcas';
 import { Resumen } from './ui/Resumen';
@@ -35,7 +36,7 @@ export default function App() {
   const [pincel, setPincel] = useState<Pincel>('vacaciones');
   const [tipoPermiso, setTipoPermiso] = useState<TipoPermiso>('otro');
   const [mensaje, setMensaje] = useState<string | null>(null);
-  const [popup, setPopup] = useState<string | null>(null);
+  const [popup, setPopup] = useState<MensajePopup | null>(null);
   const [avisoLocalidad, setAvisoLocalidad] = useState<string | null>(null);
   const [pestana, setPestana] = useState<'resumen' | 'fechas' | 'festivos'>('resumen');
   const anio = ANIOS.includes(datos.anio) ? datos.anio : ANIOS[ANIOS.length - 1];
@@ -46,11 +47,16 @@ export default function App() {
   const localidad = localidadPorId(datos.localidadId);
   const listaFestivos = useMemo(() => festivosDe(localidad, anio, FESTIVOS), [localidad, anio]);
   const festivos = useMemo(() => mapaFestivos(listaFestivos), [listaFestivos]);
+  const ctx = useMemo(
+    () => ({ anio, festivos, semanaFiestaLocal: semanaFiestaLocal(localidad, anio, FESTIVOS) }),
+    [anio, festivos, localidad],
+  );
   const plan = datos.planes[anio] ?? crearPlanVacio();
   const bloques = useMemo(() => calcularBloques(plan), [plan]);
   const marcas = useMemo(() => marcasPorDia(plan, bloques), [plan, bloques]);
   const generados = useMemo(() => diasGenerados(bloques, festivos), [bloques, festivos]);
-  const incidencias = useMemo(() => validar(plan, { anio, festivos }), [plan, anio, festivos]);
+  const incidencias = useMemo(() => validar(plan, ctx), [plan, ctx]);
+  const sanIsidro = useMemo(() => estadoSanIsidro(plan, ctx.semanaFiestaLocal, festivos), [plan, ctx, festivos]);
   const fechasConError = useMemo(
     () => new Set(incidencias.filter((i) => i.nivel === 'error').flatMap((i) => i.fechas)),
     [incidencias],
@@ -65,27 +71,36 @@ export default function App() {
     [anio],
   );
 
-  /** Cambios desde formularios o la modalidad: no se guardan si dos marcas se pisan o algo sale de su plazo. */
+  /**
+   * Cambios desde formularios o la modalidad: no se guardan si dos marcas se pisan o algo sale de su
+   * plazo. Si se guardan pero hacen perder el Día de San Isidro, se avisa.
+   */
   const setPlanComprobado = useCallback(
     (p: PlanAnio) => {
-      const rechazo = comprobarCambio(planRef.current, p, anio);
-      if (rechazo) setPopup(rechazo);
-      else setPlan(p);
+      const rechazo = comprobarCambio(planRef.current, p, ctx.anio);
+      if (rechazo) {
+        setPopup({ tipo: 'rechazo', texto: rechazo });
+        return;
+      }
+      const aviso = avisoSanIsidro(planRef.current, p, ctx.semanaFiestaLocal, ctx.festivos);
+      setPlan(p);
+      if (aviso) setPopup({ tipo: 'aviso', texto: aviso });
     },
-    [setPlan, anio],
+    [setPlan, ctx],
   );
 
   const onAplicar = useCallback(
     (desde: ISODate, hasta: ISODate) => {
-      const r = aplicarPincel(planRef.current, pincel, desde, hasta, { anio, festivos }, { tipoPermiso });
+      const r = aplicarPincel(planRef.current, pincel, desde, hasta, ctx, { tipoPermiso });
       if (r.rechazo) {
-        setPopup(r.rechazo);
+        setPopup({ tipo: 'rechazo', texto: r.rechazo });
         return;
       }
       setPlan(r.plan);
       setMensaje(r.mensaje ?? null);
+      if (r.aviso) setPopup({ tipo: 'aviso', texto: r.aviso });
     },
-    [pincel, anio, festivos, tipoPermiso, setPlan],
+    [pincel, ctx, tipoPermiso, setPlan],
   );
 
   const irA = useCallback((d: ISODate) => {
@@ -296,6 +311,7 @@ export default function App() {
                 bloques={bloques}
                 generados={generados}
                 incidencias={incidencias}
+                sanIsidro={sanIsidro}
                 onModalidad={(m) => setPlanComprobado(cambiarModalidad(plan, m))}
                 onIr={irA}
               />
@@ -346,7 +362,7 @@ export default function App() {
           </section>
         </aside>
       </div>
-      {popup && <Popup texto={popup} onCerrar={() => setPopup(null)} />}
+      {popup && <Popup key={popup.texto} mensaje={popup} onCerrar={() => setPopup(null)} />}
     </div>
   );
 }

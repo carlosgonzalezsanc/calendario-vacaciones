@@ -691,3 +691,10 @@ legend {
   display: flex;
   justify-content: flex-end;
 }
+.popup.aviso {
+  border-top-color: var(--aviso);
+}
+.resumen .perdido {
+  color: var(--aviso);
+  font-size: 13px;
+}

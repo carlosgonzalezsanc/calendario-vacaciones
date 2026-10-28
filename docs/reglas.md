@@ -71,6 +71,15 @@ En el Excel las validaciones son de tipo «fecha entre». En la web, el pincel y
 
 - **Semana reducida → Día de San Isidro**: en el Excel hay un periodo libre (inicio–fin). 💡 Por petición del usuario, la web lo sustituye por un único día al año. Encaja con el art. 87 de la prórroga ✅: si no se puede disfrutar la reducción, se da «una jornada completa no fraccionable y dos horas y media de descanso continuado» antes del 31/12. Las 2,5 h no se registran.
 
+## 4 bis. Derecho al Día de San Isidro
+
+💡 Regla indicada por el usuario (28/10/2026), coherente con el art. 87 de la prórroga ✅. Según ese artículo, la reducción se aplica «exclusivamente a aquellas personas trabajadoras que estén desempeñando efectivamente su actividad laboral durante dichos días».
+
+- El Día de San Isidro solo se puede usar si se trabajan **al menos 4 días** de la semana de fiestas locales (Madrid 2027: **10–14 de mayo**).
+- Con **2 o más días** de vacaciones (bloque o puente) o días sueltos (remanente o asuntos propios) en esa semana, **se pierde el derecho**. Solo cuentan los días laborables.
+- ⚠️ Las bajas, los permisos por convenio y los no imputables **no** cuentan como ausencia para esta regla. Pendiente de confirmar.
+- En la web es un **aviso**, no un bloqueo: sale un popup al perder el derecho (o al marcar el día sin tenerlo) y queda en la lista de avisos.
+
 ## 5. Un día, una marca
 
 En el Excel un día podía tener varias marcas y la hoja `Vista` las ordenaba: Vacaciones (V) > Suelto (S) > Puente (P) > No imputable (N) > Baja (B) ✅ .

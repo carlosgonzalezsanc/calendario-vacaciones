@@ -4,6 +4,7 @@ import { diasSolapados, marcasPorDia } from './calculos';
 import { formatoCorto, rango, sumarDias, type ISODate } from './fechas';
 import { esLaborable } from './festivos';
 import { fueraDePlazo } from './plazos';
+import { avisoSanIsidro } from './sanIsidro';
 import { DIAS_PERMISO_MATRIMONIO, NOMBRE_MARCA, type ContextoValidacion } from './validar';
 
 export type Pincel = TipoMarca | 'borrar';
@@ -18,6 +19,8 @@ export interface ResultadoPincel {
   mensaje?: string;
   /** El cambio no se aplica: hay que avisar con un popup. */
   rechazo?: string;
+  /** El cambio se aplica, pero hay que avisar con un popup (por ejemplo, pierdes el Día de San Isidro). */
+  aviso?: string;
 }
 
 export function crearPlanVacio(modalidad: ModalidadId = '10+10+5+5'): PlanAnio {
@@ -84,7 +87,9 @@ export function aplicarPincel(
   const r = aplicarSinComprobar(plan, pincel, desde, hasta, ctx, opciones);
   if (r.rechazo) return r;
   const rechazo = comprobarCambio(plan, r.plan, ctx.anio);
-  return rechazo ? { plan, rechazo } : r;
+  if (rechazo) return { plan, rechazo };
+  const aviso = avisoSanIsidro(plan, r.plan, ctx.semanaFiestaLocal, ctx.festivos);
+  return aviso ? { ...r, aviso } : r;
 }
 
 function aplicarSinComprobar(

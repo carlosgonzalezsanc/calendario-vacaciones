@@ -1,6 +1,7 @@
 import { CUPO_ASUNTOS_PROPIOS, DIAS_SAN_ISIDRO, type DiasGenerados } from '../domain/calculos';
 import { IDS_MODALIDAD, nombreModalidad, TOTAL_VACACIONES } from '../domain/bloques';
 import { formatoCorto, type ISODate } from '../domain/fechas';
+import { MAX_DIAS_AUSENCIA_SEMANA_FIESTA, type EstadoSanIsidro } from '../domain/sanIsidro';
 import type { Bloque, Incidencia, ModalidadId, PlanAnio } from '../domain/tipos';
 import { NOMBRE_MARCA } from '../domain/validar';
 
@@ -9,6 +10,8 @@ interface Props {
   bloques: Bloque[];
   generados: DiasGenerados;
   incidencias: Incidencia[];
+  /** null si no se conoce la semana de fiestas locales de la localidad. */
+  sanIsidro: EstadoSanIsidro | null;
   onModalidad: (m: ModalidadId) => void;
   onIr: (d: ISODate) => void;
 }
@@ -18,6 +21,7 @@ export function Resumen({
   bloques,
   generados,
   incidencias,
+  sanIsidro,
   onModalidad,
   onIr,
 }: Props) {
@@ -87,6 +91,14 @@ export function Resumen({
           ({plan.sanIsidro ? DIAS_SAN_ISIDRO : 0} / {DIAS_SAN_ISIDRO} día)
         </span>
       </p>
+      {sanIsidro && (
+        <p className={sanIsidro.pierdeDerecho ? 'perdido' : 'tenue'}>
+          {sanIsidro.pierdeDerecho ? '⚠ Derecho perdido. ' : ''}
+          Ausencias en la {sanIsidro.semana.nombre ?? 'semana de fiestas locales'} (
+          {formatoCorto(sanIsidro.semana.inicio)} – {formatoCorto(sanIsidro.semana.fin)}):{' '}
+          {sanIsidro.diasAusencia.length} (máximo {MAX_DIAS_AUSENCIA_SEMANA_FIESTA}: hay que trabajar al menos 4 días).
+        </p>
+      )}
 
       <h3>
         Errores <span className="contador">{errores.length}</span>

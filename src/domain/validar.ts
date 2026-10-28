@@ -1,9 +1,10 @@
-import type { Incidencia, PlanAnio, TipoMarca } from './tipos';
+import type { Incidencia, PlanAnio, SemanaFiestaLocal, TipoMarca } from './tipos';
 import { calcularBloques, diasBloque, TOTAL_VACACIONES } from './bloques';
 import { candidatosPuente, CUPO_ASUNTOS_PROPIOS, diasGenerados, marcasPorDia } from './calculos';
 import { diferenciaDias, esDomingo, esSabado, formatoCorto, type ISODate } from './fechas';
 import { esLaborable, type MapaFestivos } from './festivos';
 import { fueraDePlazo } from './plazos';
+import { estadoSanIsidro, textoPerdidaSanIsidro } from './sanIsidro';
 
 export const NOMBRE_MARCA: Record<TipoMarca, string> = {
   vacaciones: 'Vacaciones',
@@ -23,6 +24,8 @@ export const DIAS_PERMISO_MATRIMONIO = 15;
 export interface ContextoValidacion {
   anio: number;
   festivos: MapaFestivos;
+  /** Semana de fiestas locales de la localidad, si se conoce (regla del Día de San Isidro). */
+  semanaFiestaLocal?: SemanaFiestaLocal | null;
 }
 
 /** Valida el plan. Las incidencias no bloquean el guardado. */
@@ -147,6 +150,12 @@ export function validar(plan: PlanAnio, ctx: ContextoValidacion): Incidencia[] {
         ),
       );
     }
+  }
+
+  // --- Derecho al Día de San Isidro: trabajar al menos 4 días de la semana de fiestas locales ---
+  const sanIsidro = estadoSanIsidro(plan, ctx.semanaFiestaLocal, festivos);
+  if (sanIsidro?.pierdeDerecho) {
+    out.push(aviso('SAN_ISIDRO_PERDIDO', textoPerdidaSanIsidro(sanIsidro), sanIsidro.diasAusencia));
   }
 
   // --- Permisos ---
